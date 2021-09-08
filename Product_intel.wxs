@@ -30,7 +30,7 @@
     <WixVariable Id="WixUILicenseRtf" Value="resources/EULA.rtf" />
 
     <!-- ICONS -->
-    <Icon Id="ProductIcon" SourceFile="resources/trepp40.ico" />
+    <Icon Id="ProductIcon" SourceFile="resources/a40.ico" />
     <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
     <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
     <Condition Message="Please Run as Administrator.">
@@ -94,7 +94,7 @@
       <Component Id="addinfolder_component" Guid="1bcb888a-9058-4d5d-9e91-79ca1d737fcd" Directory="ADDINFOLDER" Win64="yes">
         <File Id="intellisense_xll" Name="intellisense.xll" Source="content\intellisense.xll" />
         <File Id="tonydemo_xll" Name="tonydemo.xll" Source="content\tonydemo.xll" />
-        <File Id="trepp_exceladdin_xll" Name="Trepp Exceladdin.xll" Source="content\Trepp Exceladdin.xll" />
+        <File Id="a_exceladdin_xll" Name="a Exceladdin.xll" Source="content\a Exceladdin.xll" />
         <RemoveFile Id="addinfolder_rm" Name="*.*" On="uninstall" />
         <RemoveFolder Id="addinfolder_rmdir" Directory="ADDINFOLDER" On="uninstall" />
       </Component>

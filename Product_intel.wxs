@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?define ProductVersion = "0.0.20"?>
+<?define ProductUpgradeCode = "f3343312-d004-46ae-a949-0d1baad43a35"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+  <Product Id="*" Name="!(loc.ProductName)"
+           Language="!(loc.LANG)"
+           Version="$(var.ProductVersion)"
+           Manufacturer="!(loc.ProductManufacturer)"
+           UpgradeCode="$(var.ProductUpgradeCode)">
+
+    <Package InstallerVersion="200"
+             AdminImage="no"
+             InstallPrivileges="limited"
+             InstallScope="perUser"
+             Compressed="yes"
+             Platform="x64"
+             Manufacturer="!(loc.ProductManufacturer)"
+             Description="!(loc.ProductDescription)"
+             Comments="!(loc.ProductCopyright)"/>
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <MajorUpgrade
+        AllowSameVersionUpgrades="no"
+        DowngradeErrorMessage="A newer version of [ProductName] is already installed.  If you are sure you want to downgrade, remove the existing installation via the Control Panel" />
+
+    <WixVariable Id="WixUIBannerBmp" Value="resources/Banner.jpg" />
+    <WixVariable Id="WixUIDialogBmp" Value="resources/Dialog.jpg" />
+    <WixVariable Id="WixUILicenseRtf" Value="resources/EULA.rtf" />
+
+    <!-- ICONS -->
+    <Icon Id="ProductIcon" SourceFile="resources/trepp40.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+    <Condition Message="Please Run as Administrator.">
+          Privileged
+    </Condition>
+
+    <!-- Windows Installer set TARGETDIR to the local hard drive with the most free space.  The top-level Directory must be Id="TARGETDIR" Name="SourceDir" -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="COMPANYDIR" Name="!(loc.ProductManufacturer)">
+          <Directory Id="ADDINFOLDER" Name="!(loc.ProductName)">
+          <Directory Id="env" Name="env">
+          </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- There must be a feature in the project and all components must be installed into the feature to be installed. -->
+    <Feature Id="ExcelAddIn" Title="!(loc.ProductName)" Description="!(loc.ProductDescription)" Level="1" AllowAdvertise="no">
+      <ComponentGroupRef Id="ContentGroup"/>
+    </Feature>
+
+    <PropertyRef Id="NETFRAMEWORK40CLIENT" />
+    <Condition Message="[ProductName] installer requires .NET Framework 4.0.">Installed OR NETFRAMEWORK40CLIENT</Condition>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="ADDINFOLDER" />
+    <UI Id="UI">
+      <UIRef Id="WixUI_InstallDir"/>
+    </UI>
+    <Property Id="OFFICEREGKEYS" Value="11.0,12.0,14.0,15.0,16.0" />
+    <Property Id="XLL64" Value="tonydemo.xll" />
+    <Property Id="XLL64INTEL" Value="intellisense.xll" />
+    <Property Id="PromptToCloseProcesses" Value="EXCEL" />
+    <Property Id="PromptToCloseDisplayNames" Value="Microsoft Excel" />
+
+    <Binary Id="InstallerCA.CA.dll" SourceFile="custom_action/InstallerCA/bin/Release/InstallerCA_intel.CA.dll" />
+    <CustomAction Id="Action_RegisterAddIn.SetProperty" Return="check" Property="Action_RegisterAddIn" Value="OFFICEREGKEYS=[OFFICEREGKEYS];XLL32=[XLL32];XLL64=[XLL64];XLL32INTEL=[XLL32INTEL];XLL64INTEL=[XLL64INTEL]" />
+    <CustomAction Id="Action_RegisterAddIn" BinaryKey="InstallerCA.CA.dll" DllEntry="CaRegisterAddIn" Return="check" Execute="immediate" />
+    <CustomAction Id="Action_UnRegisterAddIn.SetProperty" Return="check" Property="Action_UnRegisterAddIn" Value="OFFICEREGKEYS=[OFFICEREGKEYS];XLL32=[XLL32];XLL64=[XLL64];XLL32INTEL=[XLL32INTEL];XLL64INTEL=[XLL64INTEL]" />
+    <CustomAction Id="Action_UnRegisterAddIn" BinaryKey="InstallerCA.CA.dll" DllEntry="CaUnRegisterAddIn" Return="check" Execute="immediate" />
+    <CustomAction Id="Action_CloseAppsPrompt" BinaryKey="InstallerCA.CA.dll" DllEntry="ClosePrompt" Return="check" />
+    <InstallExecuteSequence>
+      <Custom Action="Action_CloseAppsPrompt" After="Action_RegisterAddIn.SetProperty" />
+      <Custom Action="Action_RegisterAddIn.SetProperty" Before="Action_RegisterAddIn">NOT Installed</Custom>
+      <Custom Action="Action_RegisterAddIn" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="Action_UnRegisterAddIn.SetProperty" Before="Action_UnRegisterAddIn">Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="Action_UnRegisterAddIn" Before="InstallFinalize">Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+    </InstallExecuteSequence>
+    <AdminExecuteSequence>
+      <Custom Action="Action_CloseAppsPrompt" After="Action_RegisterAddIn.SetProperty" />
+      <Custom Action="Action_RegisterAddIn.SetProperty" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="Action_RegisterAddIn" After="Action_RegisterAddIn.SetProperty">NOT Installed</Custom>
+      <Custom Action="Action_UnRegisterAddIn.SetProperty" Before="InstallFinalize">Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="Action_UnRegisterAddIn" After="Action_UnRegisterAddIn.SetProperty">Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+    </AdminExecuteSequence>
+  </Product>
+
+  <Fragment>
+    <ComponentGroup Id="ContentGroup">
+      <Component Id="addinfolder_component" Guid="1bcb888a-9058-4d5d-9e91-79ca1d737fcd" Directory="ADDINFOLDER" Win64="yes">
+        <File Id="intellisense_xll" Name="intellisense.xll" Source="content\intellisense.xll" />
+        <File Id="tonydemo_xll" Name="tonydemo.xll" Source="content\tonydemo.xll" />
+        <File Id="trepp_exceladdin_xll" Name="Trepp Exceladdin.xll" Source="content\Trepp Exceladdin.xll" />
+        <RemoveFile Id="addinfolder_rm" Name="*.*" On="uninstall" />
+        <RemoveFolder Id="addinfolder_rmdir" Directory="ADDINFOLDER" On="uninstall" />
+      </Component>
+      <Component Id="env_component" Guid="e779abe6-bc6e-4f59-a325-ffaccc262e9b" Directory="env" Win64="yes">
+        <File Id="env_gitignore" Name=".gitignore" Source="content\env\.gitignore" />
+        <File Id="env_api_ms_win_core_console_l1_1_0_dll" Name="api-ms-win-core-console-l1-1-0.dll" Source="content\env\api-ms-win-core-console-l1-1-0.dll" />
+        <File Id="env_api_ms_win_core_datetime_l1_1_0_dll" Name="api-ms-win-core-datetime-l1-1-0.dll" Source="content\env\api-ms-win-core-datetime-l1-1-0.dll" />
+        <File Id="env_api_ms_win_core_sysinfo_l1_1_0_dll" Name="api-ms-win-core-sysinfo-l1-1-0.dll" Source="content\env\api-ms-win-core-sysinfo-l1-1-0.dll" />
+        <File Id="env_api_ms_win_core_timezone_l1_1_0_dll" Name="api-ms-win-core-timezone-l1-1-0.dll" Source="content\env\api-ms-win-core-timezone-l1-1-0.dll" />
+        <File Id="env_api_ms_win_core_util_l1_1_0_dll" Name="api-ms-win-core-util-l1-1-0.dll" Source="content\env\api-ms-win-core-util-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_conio_l1_1_0_dll" Name="api-ms-win-crt-conio-l1-1-0.dll" Source="content\env\api-ms-win-crt-conio-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_convert_l1_1_0_dll" Name="api-ms-win-crt-convert-l1-1-0.dll" Source="content\env\api-ms-win-crt-convert-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_environment_l1_1_0_dll" Name="api-ms-win-crt-environment-l1-1-0.dll" Source="content\env\api-ms-win-crt-environment-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_filesystem_l1_1_0_dll" Name="api-ms-win-crt-filesystem-l1-1-0.dll" Source="content\env\api-ms-win-crt-filesystem-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_heap_l1_1_0_dll" Name="api-ms-win-crt-heap-l1-1-0.dll" Source="content\env\api-ms-win-crt-heap-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_locale_l1_1_0_dll" Name="api-ms-win-crt-locale-l1-1-0.dll" Source="content\env\api-ms-win-crt-locale-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_math_l1_1_0_dll" Name="api-ms-win-crt-math-l1-1-0.dll" Source="content\env\api-ms-win-crt-math-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_multibyte_l1_1_0_dll" Name="api-ms-win-crt-multibyte-l1-1-0.dll" Source="content\env\api-ms-win-crt-multibyte-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_private_l1_1_0_dll" Name="api-ms-win-crt-private-l1-1-0.dll" Source="content\env\api-ms-win-crt-private-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_process_l1_1_0_dll" Name="api-ms-win-crt-process-l1-1-0.dll" Source="content\env\api-ms-win-crt-process-l1-1-0.dll" />
+        <File Id="env_api_ms_win_crt_runtime_l1_1_0_dll" Name="api-ms-win-crt-runtime-l1-1-0.dll" Source="content\env\api-ms-win-crt-runtime-l1-1-0.dll" />
+        <RemoveFile Id="env_rm" Name="*.*" On="uninstall" />
+        <RemoveFolder Id="env_rmdir" Directory="env" On="uninstall" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
